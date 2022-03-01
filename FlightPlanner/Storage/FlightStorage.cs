@@ -9,7 +9,6 @@ namespace FlightPlanner.Storage
     {
         private static List<Flight> _flights = new List<Flight>();
         private static int _id;
-        private static object _flightLocker = new object();
 
         public static Flight AddFlight(AddFlightRequest request)
         {
@@ -23,20 +22,14 @@ namespace FlightPlanner.Storage
                 Id = ++_id
             };
 
-            lock (_flightLocker)
-            {
-                _flights.Add(flight);
-            }
+            _flights.Add(flight);
 
             return flight;
         }
 
         public static Flight GetFlight(int id)
         {
-            lock (_flightLocker)
-            {
-                return _flights.SingleOrDefault(f => f.Id == id);
-            }
+            return _flights.SingleOrDefault(f => f.Id == id);
         }
 
         public static void DeleteFlights(int id)
@@ -45,10 +38,7 @@ namespace FlightPlanner.Storage
 
             if (flight != null)
             {
-                lock (_flightLocker)
-                {
-                    _flights.Remove(flight);
-                }
+                _flights.Remove(flight);
             }
         }
 
@@ -56,7 +46,7 @@ namespace FlightPlanner.Storage
         {
             input = input.ToLower().Trim();
 
-            var fromAirports = _flights.Where(f => 
+            var fromAirports = _flights.Where(f =>
                 f.From.AirportName.ToLower().Trim().Contains(input) ||
                 f.From.City.ToLower().Trim().Contains(input) ||
                 f.From.Country.ToLower().Trim().Contains(input)).Select(f => f.From).ToList();
@@ -77,16 +67,13 @@ namespace FlightPlanner.Storage
 
         public static bool Exists(AddFlightRequest request)
         {
-            lock (_flightLocker)
-            {
-                return _flights.Any(f =>
-                    f.Carrier.ToLower().Trim() == request.Carrier.ToLower().Trim() &&
-                    f.From.AirportName.ToLower().Trim() == request.From.AirportName.ToLower().Trim() &&
-                    f.To.AirportName.ToLower().Trim() == request.To.AirportName.ToLower().Trim() &&
-                    f.ArrivalTime == request.ArrivalTime &&
-                    f.DepartureTime == request.DepartureTime);
-            }
-        }
+            return _flights.Any(f =>
+                f.Carrier.ToLower().Trim() == request.Carrier.ToLower().Trim() &&
+                f.From.AirportName.ToLower().Trim() == request.From.AirportName.ToLower().Trim() &&
+                f.To.AirportName.ToLower().Trim() == request.To.AirportName.ToLower().Trim() &&
+                f.ArrivalTime == request.ArrivalTime &&
+                f.DepartureTime == request.DepartureTime);
+    }
 
         public static PageResult SearchFlight(SearchFlightsRequest request)
         {
@@ -173,7 +160,7 @@ namespace FlightPlanner.Storage
             {
                 return false;
             }
-            
+
             return true;
         }
     }

@@ -8,38 +8,49 @@ namespace FlightPlanner.Controllers
     [ApiController]
     public class CustomerApiController : ControllerBase
     {
+        private static readonly object _customerLocker = new object();
+
         [HttpGet]
         [Route("airports")]
         public IActionResult SearchAirports(string search)
         {
-            var airports = FlightStorage.SearchAirports(search);
-            return Ok(airports);
+            lock (_customerLocker)
+            {
+                var airports = FlightStorage.SearchAirports(search);
+                return Ok(airports);
+            }
         }
 
         [HttpPost]
         [Route("flights/search")]
         public IActionResult SearchFlights(SearchFlightsRequest req)
         {
-            if (!FlightStorage.IsValidSearch(req))
+            lock (_customerLocker)
             {
-                return BadRequest();
-            }
+                if (!FlightStorage.IsValidSearch(req))
+                {
+                    return BadRequest();
+                }
 
-            return Ok(FlightStorage.SearchFlight(req));
+                return Ok(FlightStorage.SearchFlight(req));
+            }
         }
 
         [HttpGet]
         [Route("flights/{id}")]
         public IActionResult FindFlightById(int id)
         {
-            var flight = FlightStorage.GetFlight(id);
-
-            if (flight == null)
+            lock (_customerLocker)
             {
-                return NotFound();
-            }
+                var flight = FlightStorage.GetFlight(id);
 
-            return Ok(flight);
+                if (flight == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(flight);
+            }
         }
     }
 }
